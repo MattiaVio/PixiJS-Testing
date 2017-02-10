@@ -1,91 +1,105 @@
-<html>
-	<head>
-		<title>Testing PixiJS Library</title>
-		<script type="text/javascript" src="./src/pixi.js"></script>
-		<style>* {padding: 0; margin: 0}</style>
-
-	</head>
+<!doctype html>
+	<meta charset="utf-8">
+	<title>Make a sprite from a texture atlas</title>
 	<body>
+		<script src="src/pixi.js"></script>
+		<script>
+			//Aliases
+			var Container = PIXI.Container,
+			autoDetectRenderer = PIXI.autoDetectRenderer,
+			loader = PIXI.loader,
+			resources = PIXI.loader.resources,
+			TextureCache = PIXI.utils.TextureCache,
+			Texture = PIXI.Texture,
+			Sprite = PIXI.Sprite;
 
-		<script type="text/javascript">
-			
-
-			/* Makes the stage to fit the entire window 
-			
-			renderer.view.style.position = "absolute";
-			renderer.view.style.display = "block";
-			renderer.autoResize = true;
-			renderer.resize(window.innerWidth, window.innerHeight); */
-
-
-			//Create a container object called the `stage`
-			var stage = new PIXI.Container(),
-			
-			//Create the renderer
-			renderer = PIXI.autoDetectRenderer(256, 256);
-
-
-			//Defining alias for PIXI common functions
-			var Sprite = PIXI.Sprite,
-				TextureCache = PIXI.utils.TextureCache,
-				resources = PIXI.loader.resources,
-				Rectangle = PIXI.Rectangle;
-
-
-			
-			//Add the canvas to the HTML document
+			//Create a Pixi stage and renderer and add the 
+			//renderer.view to the DOM
+			var stage = new Container(),
+			renderer = autoDetectRenderer(512, 512);
 			document.body.appendChild(renderer.view);
 
-			//Use Pixi's built-in `loader` object to load an image
-			PIXI.loader
-			  .add("http://vignette2.wikia.nocookie.net/nethack/images/6/62/Slash'Em_monster_tiles.png")
-			  .on("progress", loadProgressHandler)
-			  .load(setup);
+			//load a JSON file and run the `setup` function when it's done
+			loader
+			.add("images/treasureHunter.json")
+			.load(setup);
 
+			//Define variables that might be used in more 
+			//than one function
+			var dungeon, explorer, treasure, door, id;
 
-			// Progress bar when loading images
-			function loadProgressHandler(loader, resource) {
-
-				//Display the file `url` currently being loaded
-				console.log("loading: " + resource.url); 
-
-				//Display the precentage of files currently loaded
-				console.log("progress: " + loader.progress + "%"); 
-
-				//If you gave your files names as the first argument 
-				//of the `add` method, you can access them like this
-				//console.log("loading: " + resource.name);
-			}
-
-
-			//This `setup` function will run when the image has loaded
 			function setup() {
+				//There are 3 ways to make sprites from textures atlas frames
 
-				//Create the `tileset` sprite from the texture
-				var texture = TextureCache["http://vignette2.wikia.nocookie.net/nethack/images/6/62/Slash'Em_monster_tiles.png"];
-				console.log(texture);
+				//1. Access the `TextureCache` directly
+				var dungeonTexture = TextureCache["dungeon.png"];
+				dungeon = new Sprite(dungeonTexture);
+				stage.addChild(dungeon);
 
-				//Create a rectangle object that defines the position and
-				//size of the sub-image you want to extract from the texture
-				var rectangle = new Rectangle(0, 0, 18, 18);
+				//2. Access the texture using throuhg the loader's `resources`:
+				explorer = new Sprite(
+					resources["images/treasureHunter.json"].textures["explorer.png"]
+				);
+				explorer.x = 68;
 
-				//Tell the texture to use that rectangular section
-				texture.frame = rectangle;
+				//Center the explorer vertically
+				explorer.y = stage.height / 2 - explorer.height / 2;
+				stage.addChild(explorer);
 
-				//Create the sprite from the texture
-				var spider = new Sprite(texture);
+				//3. Create an optional alias called `id` for all the texture atlas 
+				//frame id textures.
+				id = PIXI.loader.resources["images/treasureHunter.json"].textures; 
 
-				//Position the rocket sprite on the canvas
-				spider.x = 32;
-				spider.y = 32;
+				//Make the treasure box using the alias
+				treasure = new Sprite(id["treasure.png"]);
+				stage.addChild(treasure);
 
-				//Add the rocket to the stage
-				stage.addChild(spider);
+				//Position the treasure next to the right edge of the canvas
+				treasure.x = stage.width - treasure.width - 48;
+				treasure.y = stage.height / 2 - treasure.height / 2;
+				stage.addChild(treasure);
+
+				//Make the exit door
+				door = new Sprite(id["door.png"]); 
+				door.position.set(32, 0);
+				stage.addChild(door);
+
+				//Make the blobs
+				var numberOfBlobs = 6,
+				spacing = 48,
+				xOffset = 150;
+
+				//Make as many blobs as there are `numberOfBlobs`
+				for (var i = 0; i < numberOfBlobs; i++) {
+
+					//Make a blob
+					var blob = new Sprite(id["blob.png"]);
+
+					//Space each blob horizontally according to the `spacing` value.
+					//`xOffset` determines the point from the left of the screen
+					//at which the first blob should be added.
+					var x = spacing * i + xOffset;
+
+					//Give the blob a random y position
+					//(`randomInt` is a custom function - see below)
+					var y = randomInt(0, stage.height - blob.height);
+
+					//Set the blob's position
+					blob.x = x;
+					blob.y = y;
+
+					//Add the blob sprite to the stage
+					stage.addChild(blob);
+				}
 
 				//Render the stage   
 				renderer.render(stage);
 			}
-		</script>
 
+			//The `randomInt` helper function
+			function randomInt(min, max) {
+				return Math.floor(Math.random() * (max - min + 1)) + min;
+			}
+
+		</script>
 	</body>
-</html>
